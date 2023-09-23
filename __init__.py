@@ -22,7 +22,7 @@ class HTMLElement:
         self.attributes = attributes or {}
         self.children = children or []
 
-    def add_element(self, element: str | 'HTMLElement') -> None:
+    def add_element(self, element: str | HTMLElement) -> None:
         """
         Add a child element to the current element.
 
@@ -30,7 +30,7 @@ class HTMLElement:
         """
         self.children.append(element)
 
-    def remove_element(self, element: str | 'HTMLElement') -> None:
+    def remove_element(self, element: str | HTMLElement) -> None:
         """
         Remove a child element from the current element.
 
