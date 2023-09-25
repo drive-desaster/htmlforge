@@ -10,27 +10,67 @@ class HTMLElement:
     Represents a generic HTML element.
     """
 
-    def __init__(self, tag_name: str, attributes: dict[str, str] = None, children: list[str | HTMLElement] = None) -> None:
+    def __init__(self, tag_name: str, attributes: dict[str, str] = None, children: list[str | tuple[str, str] | HTMLElement] = None) -> None:
         """
         Initialize an HTMLElement.
 
         :param tag_name: Name of the HTML tag.
         :param attributes: Dictionary of attributes for the tag.
-        :param children: List of child elements or strings.
+        :param children: List of child elements or strings. Each child can be:
+                         - A plain string (which will be neither escaped nor obfuscated).
+                         - A tuple with the string and a flag indicating whether to escape or obfuscate.
         """
         self.tag_name = tag_name
         self.attributes = attributes or {}
-        self.children = children or []
+        self.children = []
+        for child in children:
+            if isinstance(child, tuple):
+                text, flag = child
+                if flag == "escape":
+                    text = self._escape_html(text)
+                elif flag == "obfuscate":
+                    text = self._escape_html(text)
+                    text = self._escape_html(text, obfuscate=True)
+                self.children.append(text)
+            else:
+                self.children.append(child)
 
-    def add_element(self, element: str | HTMLElement) -> None:
+    @staticmethod
+    def _escape_html(text: str, obfuscate: bool = False) -> str:
         """
-        Add a child element to the current element.
+        Escape special characters in the given text to their HTML entities or obfuscate the text.
 
-        :param element: The child element to add.
+        :param text: The text string to escape or obfuscate.
+        :param obfuscate: If True, the text will be obfuscated by converting each character to its corresponding HTML character code.
+                          If False (default), the text will be HTML-escaped to convert special characters to their HTML entities.
+        :return: Either the HTML-escaped or obfuscated string, based on the obfuscate parameter.
         """
-        self.children.append(element)
+        if obfuscate:
+            return "".join(f"&#{ord(char)};" for char in text)
+        else:
+            return html.escape(text)
 
-    def remove_element(self, element: str | HTMLElement) -> None:
+    def add_child(self, child: str | HTMLElement, escape: bool = True, obfuscate: bool = False) -> None:
+        """
+        Add a child (text or element) to the current element.
+
+        :param child: The child (text or element) to add.
+        :param escape: If True (default), and the child is text, it will be HTML-escaped.
+        :param obfuscate: If True, and the child is text, it will be obfuscatedby converting each character to its corresponding HTML character code.
+                          This can be used to hide the text from simple text scraping methods.
+                          Note: Obfuscation will only occur if escape is also True.
+        :raises ValueError: If escape is False and obfuscate is True.
+        """
+        if isinstance(child, str):
+            if escape:
+                child = self._escape_html(child)
+                if obfuscate:
+                    child = self._escape_html(child, obfuscate=True)
+            elif obfuscate:
+                raise ValueError("Cannot obfuscate text without escaping it first.")
+        self.children.append(child)
+
+    def remove_child(self, element: str | HTMLElement) -> None:
         """
         Remove a child element from the current element.
 
@@ -38,6 +78,11 @@ class HTMLElement:
         """
         if element in self.children:
             self.children.remove(element)
+        elif isinstance(element, str):
+            if self._escape_html(element) in self.children:
+                self.children.remove(self._escape_html(element))
+            elif self._escape_html(element, obfuscate=True) in self.children:
+                self.children.remove(self._escape_html(element, obfuscate=True))
 
     def set_attribute(self, key: str, value: str) -> None:
         """
@@ -63,7 +108,7 @@ class HTMLElement:
 
         :return: HTML string representation of the element.
         """
-        attributes_str = "".join(f' {key}="{html.escape(value)}"' for key, value in self.attributes.items())
+        attributes_str = "".join(f' {key}="{self._escape_html(value)}"' for key, value in self.attributes.items())
         children_str = " ".join(str(child) for child in self.children)
         return f'<{self.tag_name}{attributes_str}>{children_str}</{self.tag_name}>'
 
