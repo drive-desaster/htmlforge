@@ -63,9 +63,9 @@ class HTMLElement:
 
         :return: HTML string representation of the element.
         """
-        attributes_str = " ".join(f'{key}="{html.escape(value)}"' for key, value in self.attributes.items())
+        attributes_str = "".join(f' {key}="{html.escape(value)}"' for key, value in self.attributes.items())
         children_str = " ".join(str(child) for child in self.children)
-        return f'<{self.tag_name} {attributes_str.strip()}>{children_str}</{self.tag_name}>'
+        return f'<{self.tag_name}{attributes_str}>{children_str}</{self.tag_name}>'
 
     def __repr__(self) -> str:
         """
