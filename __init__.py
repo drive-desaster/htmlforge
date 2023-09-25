@@ -118,7 +118,10 @@ class HTMLElement:
 
         :return: String representation of the object.
         """
-        return f"{self.__class__.__name__}(attributes={self.attributes!r}, children={self.children!r})"
+        if self.__class__ != HTMLElement:
+            return f"{self.__class__.__name__}(attributes={self.attributes!r}, children={self.children!r})"
+        else:
+            return f"{self.__class__.__name__}(tag_name={self.tag_name!r}, attributes={self.attributes!r}, children={self.children!r})"
 
 
 class Html(HTMLElement):
